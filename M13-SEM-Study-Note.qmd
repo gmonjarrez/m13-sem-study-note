@@ -1,0 +1,349 @@
+---
+title: "Structural Equation Modeling in R: Study Note"
+author: "Georgiamerica Monjarrez"
+date: November 22, 2026
+format:
+  html:
+    toc: true
+    toc-title: "Table of contents"
+    toc-location: right
+    toc-depth: 1
+    number-sections: true
+    smooth-scroll: true
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Introduction
+
+Structural equation modeling (SEM) connects regression and factor analysis. In UCLA’s fifth-grade example, Adjustment and Risk predict Achievement, with each factor measured by three observed scores. The tables use UCLA’s published results. The R code uses the original dataset.
+
+# Data and software
+
+Install `lavaan` once in R with `install.packages("lavaan")`. The import reads UCLA's 500 cases. The matrix commands summarize how the nine scores vary together.
+
+```{r}
+library(lavaan)
+data_url <- "https://stats.oarc.ucla.edu/wp-content/uploads/2021/02/worland5.csv"
+dat <- read.csv(data_url)
+str(dat)
+head(dat)
+colSums(is.na(dat))
+S <- cov(dat)
+round(S, 2)
+round(cor(dat), 3)
+```
+
+| Factor | Observed indicators |
+|---|---|
+| Adjustment | `motiv` (motivation), `harm` (harmony), `stabi` (stability) |
+| Risk | `ppsych` (negative parental psychology), `ses` (socioeconomic status), `verbal` (verbal IQ) |
+| Achievement | `read` (reading), `arith` (arithmetic), `spell` (spelling) |
+
+UCLA reports the following sample covariances. All nine sample variances are 100, so dividing each covariance by 100 gives its corresponding correlation. Reading and spelling are strongly related ($r=.87$). Negative parental psychology is negatively related to reading ($r=-.39$) and motivation ($r=-.25$).
+
+| | motiv | harm | stabi | ppsych | ses | verbal | read | arith | spell |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| motiv | 100 | | | | | | | | |
+| harm | 77 | 100 | | | | | | | |
+| stabi | 32 | 25 | 100 | | | | | | |
+| ppsych | −25 | −25 | −40 | 100 | | | | | |
+| ses | 25 | 26 | 40 | −42 | 100 | | | | |
+| verbal | 59 | 58 | 27 | −16 | 18 | 100 | | | |
+| read | 53 | 42 | 56 | −39 | 43 | 36 | 100 | | |
+| arith | 60 | 44 | 49 | −24 | 37 | 38 | 73 | 100 | |
+| spell | 59 | 45 | 48 | −31 | 33 | 38 | 87 | 72 | 100 |
+
+The population covariance matrix $\Sigma$ contains the unknown covariances in the population. The sample matrix $S$ estimates them using the 500 rows, with divisor $n-1$ in `cov()`. The matrix $\Sigma(\hat\theta)$ contains the covariances predicted by the fitted model. Their discrepancy reveals which observed relationships the model struggles to reproduce. Normal-theory ML in lavaan scales sample covariances using divisor $n$ by default.
+
+# SEM concepts and lavaan syntax
+
+| Term | Meaning in this example |
+|---|---|
+| Observed variable | A measured column such as `motiv`. |
+| Latent variable or factor | An unobserved construct inferred from shared variation, such as Adjustment. |
+| Indicator | A measured variable assigned to a factor, such as spelling for Achievement. |
+| Exogenous variable | A source variable with no incoming regression path in the specified model, such as Risk in Model 6B. |
+| Endogenous variable | A variable predicted within the model, such as Achievement in Model 6B. |
+| Factor loading | The expected change in an indicator per unit of its factor. |
+| Regression path | The expected change in an outcome per unit of a predictor, holding the other predictors in that equation constant. |
+| Measurement model | The factor-to-indicator equations, with indicator residuals. |
+| Structural model | The regression equations linking predictors to outcomes, such as Adjustment and Risk predicting Achievement. |
+| Residual | The part of an outcome or indicator left unexplained by its equation. |
+| Intercept | The expected outcome when its predictors equal zero. |
+| Covariance | A measure of how two variables vary together in their original units. |
+
+| Syntax | Meaning and diagram convention |
+|---|---|
+| `read ~ motiv` | A single-headed regression arrow from motivation to reading. |
+| `adjust =~ motiv + harm + stabi` | Single-headed loading arrows from the Adjustment ellipse to the observed indicator rectangles. |
+| `motiv ~~ harm` | A double-headed covariance arrow. Repeating the same variable gives a variance loop. For endogenous variables, the term refers to residuals. |
+| `read ~ 1` | An intercept, sometimes shown as an arrow from a constant. Without predictors it gives a mean. |
+| `adjust =~ 1*motiv` | Fixes the loading on the measurement arrow to 1 to define the factor's scale. |
+| `adjust =~ NA*motiv` | Frees the marker loading. Supply another scaling constraint, such as a fixed factor variance in CFA. |
+| `adjust =~ a*harm` | Labels the harmony loading `a`. Reusing an otherwise free label constrains parameters to equality. |
+
+In matrix notation, $y=\nu+\Lambda\eta+\epsilon$ gives the measurement equations. Each row of $\Lambda$ refers to an indicator and each column to a factor. The structural equation is $\eta=\alpha+B\eta+\Gamma\xi+\zeta$, where $\eta$ contains endogenous factors, $\xi$ contains exogenous factors, and $\zeta$ contains disturbances. In each path matrix the row is the destination and the column is the source.
+
+# Regression and path analysis
+
+## Simple regression
+
+The models estimate reading from motivation. In UCLA's results, both give a slope of 0.530 and an intercept close to zero because the scores are centered. A one-point increase in motivation corresponds to 0.530 more predicted reading points. The ML residual variance is 71.766 and the predictor variance is 99.800. Least squares minimizes the residual sum of squares and estimates residual variance using $n-2$ here. Normal ML maximizes the likelihood and divides the residual sum of squares by $n$. The five joint moments (two means, two variances, one covariance) match five free parameters, yielding zero model degrees of freedom. The 498 residual degrees of freedom from `lm()` serve a different purpose.
+
+```{r}
+fit_lm <- lm(read ~ motiv, data = dat)
+summary(fit_lm)
+fit_lavaan <- sem('read ~ 1 + motiv
+                   motiv ~~ motiv', data = dat)
+summary(fit_lavaan)
+c(OLS = sigma(fit_lm)^2, ML = mean(residuals(fit_lm)^2))
+```
+
+## Multiple and multivariate regression
+
+Model 2 has one outcome and two predictors. Models 3A, 3D and 3E jointly model reading and arithmetic. Every model below is an observed-variable regression, and each outcome has its own residual variance. In Model 2, the predictor covariance is estimated explicitly. In 3A, 3D and 3E, the observed exogenous moments are treated as fixed at their sample values.
+
+```{r}
+models <- list(
+  M2 = 'read ~ 1 + ppsych + motiv
+        ppsych ~~ motiv',
+  M3A = 'read ~ 1 + ppsych + motiv
+         arith ~ 1 + motiv',
+  M3D = 'read ~ 1 + ppsych + motiv
+         arith ~ 1 + motiv
+         read ~~ 0*arith',
+  M3E = 'read ~ 1 + ppsych + motiv
+         arith ~ 1 + ppsych + motiv'
+)
+regression_fits <- lapply(models, sem, data = dat)
+for (name in names(regression_fits)) {
+  cat("\n", name, "\n")
+  print(summary(regression_fits[[name]]))
+}
+```
+
+| UCLA model | Endogenous | Exogenous | Regression paths | Covariance treatment | Residual variances | Free parameters | df |
+|---|---|---|---|---|---|---:|---:|
+| 2 | Reading | Motivation, parental psychology | Both predictors → reading | Predictor covariance free | Reading | 9 | 0 |
+| 3A | Reading, arithmetic | Motivation, parental psychology | Both → reading. Motivation → arithmetic. | Outcome residual covariance free | Reading, arithmetic | 8 | 1 |
+| 3D | Reading, arithmetic | Motivation, parental psychology | Same as 3A | Outcome residual covariance fixed to zero | Reading, arithmetic | 7 | 2 |
+| 3E | Reading, arithmetic | Motivation, parental psychology | Both predictors → both outcomes | Outcome residual covariance free | Reading, arithmetic | 9 | 0 |
+
+In 3A, motivation predicts higher reading and arithmetic scores (0.476 and 0.600), and negative parental psychology predicts lower reading scores (−0.216). Fixing the residual covariance to zero in 3D shifts the reading slopes to 0.461 and −0.275 and raises chi-square from 6.796 to 234.960. The two outcomes share considerable variation beyond their specified predictors. In 3E, adding parental psychology to arithmetic gives a slope of −0.096. With the same predictors in both equations, estimating or fixing the residual covariance yields the same slopes, though fit can differ.
+
+## Observed-variable path analysis
+
+```{r}
+# Reading is both an outcome and a predictor.
+m4a <- 'read ~ 1 + ppsych + motiv
+        arith ~ 1 + motiv + read'
+fit4a <- sem(m4a, data = dat)
+summary(fit4a, standardized = TRUE, rsquare = TRUE)
+```
+
+```{dot}
+//| fig-cap: "Model 4A. Single-headed arrows show regressions. The dashed double-headed arrow shows the sample covariance of the exogenous predictors."
+digraph {
+  rankdir=LR
+  node [shape=box]
+  "Parental psychology" -> Reading [label="−0.275"]
+  Motivation -> Reading [label="0.461"]
+  Motivation -> Arithmetic [label="0.296"]
+  Reading -> Arithmetic [label="0.573"]
+  "Parental psychology" -> Motivation [dir=both, style=dashed, constraint=false]
+}
+```
+
+In Model 4A, negative parental psychology predicts lower reading scores after adjusting for motivation. Motivation predicts higher reading scores after adjusting for parental psychology. Motivation and reading each predict higher arithmetic scores holding the other fixed. Reading carries an indirect association from parental psychology to arithmetic of approximately $(-0.275)(0.573)=-0.158$. Motivation has an indirect association of $(0.461)(0.573)=0.264$ in addition to its direct path of 0.296.
+
+# Model fit and identification
+
+```{r}
+fit_fields <- c("npar", "chisq", "df", "pvalue", "baseline.chisq",
+                "baseline.df", "cfi", "tli", "rmsea", "srmr")
+round(fitMeasures(fit4a, fit_fields), 3)
+```
+
+Model 4A gives $\chi^2(1)=4.870$, $p=.027$. The exact-fit test detects a discrepancy. The baseline model has $\chi^2(5)=674.748$. It provides a reference with no predictor-to-outcome associations or outcome residual covariance under this model's fixed-predictor setup. CFI (0.994) and TLI (0.971) show substantial improvement over the baseline, with TLI accounting for complexity through chi-square per degree of freedom. RMSEA (0.088, 90% CI 0.024–0.172) estimates approximate discrepancy per degree of freedom. The wide interval reflects uncertainty in a one-df model. SRMR is 0.015, so the average standardized residual is small. The overall pattern suggests that 4A reproduces much of the covariance structure while leaving a detectable discrepancy.
+
+A saturated model reproduces all sample moments freely and has zero degrees of freedom. A just-identified model has a unique solution and zero degrees of freedom. An over-identified model has a unique solution and positive degrees of freedom, leaving restrictions to test. An under-identified model lacks enough independent information for unique estimates. Negative degrees of freedom guarantee under-identification, and a nonnegative count alone cannot establish identification. A free parameter is estimated from the data, and a fixed parameter is set in advance.
+
+# Modification indices
+
+```{r}
+head(modindices(fit4a, sort = TRUE), 10)
+m4b <- 'read ~ 1 + ppsych + motiv
+        arith ~ 1 + motiv + read + ppsych'
+fit4b <- sem(m4b, data = dat)
+round(fitMeasures(fit4b, fit_fields), 3)
+lavTestLRT(fit4a, fit4b)
+```
+
+A modification index approximates the reduction in chi-square from freeing one fixed parameter, a one-df change. The expected parameter change (EPC) estimates the resulting coefficient on its original scale. In UCLA's example, `arith ~ ppsych` has MI 4.847 and EPC 0.068. The refit gives a slope of 0.068 and chi-square falls by 4.870. Model 4B is saturated. A direct link is plausible if home stress relates to arithmetic through channels beyond reading. The estimated conditional association is positive and small, so its direction merits scrutiny. A larger index for reversing a predictor/outcome role would require a different substantive explanation. Searching many candidate paths can find sample-specific patterns that fail to replicate. Use the indices to diagnose misfit and justify any exploratory changes using theory.
+
+# Measurement model
+
+The CFA fixes one loading per factor to 1. Verbal IQ sets the direction of the Risk factor, so higher factor scores indicate a more favorable profile.
+
+```{r}
+measurement_model <- '
+  adjust =~ motiv + harm + stabi
+  risk =~ verbal + ppsych + ses
+  achieve =~ read + arith + spell
+'
+fit_measurement <- cfa(measurement_model, data = dat)
+summary(fit_measurement, fit.measures = TRUE, standardized = TRUE)
+```
+
+| Factor | Indicator | Standardized loading | Standardized residual variance |
+|---|---|---:|---:|
+| Adjustment | Motivation | 0.933 | 0.129 |
+| Adjustment | Harmony | 0.825 | 0.319 |
+| Adjustment | Stability | 0.648 | 0.580 |
+| Risk | Verbal IQ | 0.733 | 0.463 |
+| Risk | Negative parental psychology | −0.564 | 0.682 |
+| Risk | Socioeconomic status | 0.591 | 0.650 |
+| Achievement | Reading | 0.941 | 0.114 |
+| Achievement | Arithmetic | 0.788 | 0.379 |
+| Achievement | Spelling | 0.919 | 0.156 |
+
+These published Model 6A values also apply to the covariance-equivalent CFA. Each loading is the expected indicator change in standard deviations for a one-standard-deviation increase in its factor. Motivation is the strongest Adjustment indicator. Higher verbal IQ and socioeconomic status accompany lower negative parental psychology on the Risk dimension. Reading and spelling have especially strong Achievement loadings. Residual variance is the share of indicator variance the factor leaves unexplained. For example, the Achievement factor accounts for about 89% of the variance in reading and 62% in arithmetic.
+
+The CFA and Model 6A both allow all three factor covariances through different parameterizations. Their common fit is $\chi^2(24)=148.982$, $p<.001$, CFI = .951, TLI = .927, RMSEA = .102, and SRMR = .041. The model improves substantially on independence and has small average standardized residuals, but the RMSEA and chi-square indicate meaningful misfit. The three factors have interpretable indicators, and the fit evidence calls for caution.
+
+# Structural regression models
+
+## One endogenous factor
+
+Adjustment and Risk are correlated predictors of Achievement.
+
+```{r}
+structural_model <- paste(measurement_model, "achieve ~ adjust + risk")
+fit_structural <- sem(structural_model, data = dat)
+summary(fit_structural, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE)
+```
+
+A one-SD increase in Adjustment predicts 0.372 SD higher Achievement at the same Risk score. A one-SD increase along the verbal-IQ-oriented Risk factor predicts 0.564 SD higher Achievement at the same Adjustment score. Both paths have $p<.001$. Because the Risk factor is oriented toward higher verbal IQ and socioeconomic status and lower negative parental psychology, the positive coefficient describes a more favorable profile. Using parental psychology as the marker reverses the Risk factor's orientation and the sign of its structural path. The factor loadings retain the pattern shown in the CFA table. Adjustment and Risk have covariance 32.098 and correlation .470. Achievement's residual variance is 30.685 in marker-scale units, or .347 in standardized units, so the predictors account for about 65.3% of latent Achievement variance. Global fit equals the CFA's mixed fit.
+
+## Two endogenous factors
+
+```{r}
+# Label paths to estimate the product and its delta-method interval.
+two_endogenous <- paste(measurement_model, '
+  adjust ~ a*risk
+  achieve ~ b*adjust + direct*risk
+  indirect := a*b
+  total := direct + indirect
+')
+fit_two <- sem(two_endogenous, data = dat)
+summary(fit_two, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE)
+effects <- parameterEstimates(fit_two, standardized = TRUE)
+effects[effects$op %in% c("~", ":="), ]
+```
+
+```{dot}
+//| fig-cap: "Model 6B structural paths. Ellipses denote latent variables. Labels are standardized coefficients."
+digraph {
+  rankdir=LR
+  node [shape=ellipse]
+  Risk -> Adjustment [label="0.470"]
+  Risk -> Achievement [label="0.564"]
+  Adjustment -> Achievement [label="0.372"]
+}
+```
+
+For $\eta=(\text{Adjustment},\text{Achievement})^\mathsf{T}$ and $\xi=\text{Risk}$, $\Gamma=(a,c')^\mathsf{T}$ contains Risk's two outgoing paths, and $B_{21}=b$ contains the Adjustment-to-Achievement path. All other entries of $B$ are zero. The unstandardized indirect association is approximately $0.599(0.375)=0.225$. The standardized indirect association is about $0.470(0.372)=0.175$, giving a standardized total association of about 0.739 when added to the direct path of 0.564. The identical fit of Models 6A and 6B reflects the same implied covariance structure. Direction and mediation require substantive support beyond the fit statistics.
+
+# Practice questions and answers
+
+1. **What is structural equation modeling?**  
+   SEM estimates a system of regression and measurement equations and checks how well their implied moments reproduce the observed data.
+
+2. **Which statistical models can be treated as special cases of SEM?**  
+   Simple, multiple and multivariate regression, observed-variable path analysis, CFA, and latent structural regression all fit within SEM.
+
+3. **What is the difference between an observed variable and a latent variable?**  
+   Reading is measured directly as a dataset column. Achievement is inferred from the shared variation of reading, arithmetic and spelling.
+
+4. **What is the difference between an exogenous variable and an endogenous variable?**  
+   An exogenous variable has no incoming regression arrow. An endogenous variable has at least one, as Adjustment and Achievement do in Model 6B.
+
+5. **What is the difference between a measurement model and a structural model?**  
+   The measurement model links factors to indicators. The structural model specifies predictive relationships among variables, such as Risk predicting Achievement.
+
+6. **What does the `~` operator mean in `lavaan`?**  
+   It regresses the variable on the left on predictors on the right, as in `read ~ motiv`.
+
+7. **What does the `=~` operator mean?**  
+   It defines a latent factor and its observed indicators, as in `achieve =~ read + arith + spell`.
+
+8. **What does the `~~` operator mean?**  
+   It specifies a covariance for different variables and a variance for a repeated variable. For fitted outcomes this can be a residual covariance or residual variance.
+
+9. **What is the difference between a regression path and a factor loading?**  
+   A regression path expresses a conditional predictive relationship. A factor loading expresses how a measured indicator changes with the factor it represents.
+
+10. **What is the difference between a sample covariance matrix and a model-implied covariance matrix?**  
+    The sample matrix $S$ comes from the observations. The implied matrix $\Sigma(\hat\theta)$ comes from the fitted parameters and model restrictions.
+
+11. **Why does the `cov()` function produce a sample covariance matrix rather than a population covariance matrix?**  
+    It uses the supplied sample and its sample means, dividing the sum of cross-products by $n-1$ to estimate population covariance.
+
+12. **What is the difference between multiple regression and multivariate regression?**  
+    Multiple regression uses several predictors for one outcome. Multivariate regression models two or more outcomes jointly and can estimate their residual covariance.
+
+13. **Why are some models saturated?**  
+    They have enough independently estimable parameters to reproduce every modeled sample moment, as Model 3E does when both predictors enter both equations and the residual covariance is free.
+
+14. **What does it mean when a model has zero degrees of freedom?**  
+    The moment count equals the free parameter count. If identified, the model can reproduce the sample moments and has no remaining restrictions for an overall fit test.
+
+15. **What does it mean when a model has negative degrees of freedom?**  
+    There are more free parameters than available moments, so the data cannot uniquely identify all parameters.
+
+16. **What is the difference between the $\Gamma$ and $B$ matrices?**  
+    $\Gamma$ contains exogenous-to-endogenous paths, such as Risk to Adjustment. $B$ contains paths between endogenous variables, such as Adjustment to Achievement.
+
+17. **What is a modification index?**  
+    It is a one-df score statistic that approximates the chi-square improvement from freeing one fixed parameter.
+
+18. **Why should researchers not automatically follow modification-index recommendations?**  
+    Repeated data-driven searches can capitalize on chance and introduce implausible directions or cross-loadings. Theory and independent validation support defensible revisions.
+
+19. **What is the difference between a direct effect and an indirect effect?**  
+    The direct effect follows a single arrow, such as Risk to Achievement. The indirect effect follows multiple arrows, such as Risk to Adjustment to Achievement, and equals the product of their coefficients.
+
+20. **Which paths in the structural model are theoretically most important?**  
+    Adjustment → Achievement and Risk → Achievement address the academic outcome directly. Risk → Adjustment provides the proposed mechanism for the indirect relationship.
+
+21. **How should the fit of the measurement model be evaluated?**  
+    Combine overall fit indices and residuals with the signs and sizes of loadings, indicator residual variances and factor correlations.
+
+22. **How should the fit of the structural model be evaluated?**  
+    Consider overall fit alongside path signs, effect sizes, uncertainty, and explained variance. Compare models with the same indicators and recognize that distinct structures can fit equally well.
+
+23. **What conclusions can be drawn from the standardized estimates?**  
+    The verbal-IQ-oriented Risk association with Achievement (.564) is larger than the Adjustment association (.372) on a common SD scale. Reading (.941) is a stronger indicator of Achievement than arithmetic (.788).
+
+24. **What limitations should be considered when interpreting this SEM?**  
+    The estimates depend on the proposed indicators and path directions, normal-theory ML assumptions and the sample. Omitted variables, measurement weaknesses, and observational data limit causal interpretation and generalization. The elevated RMSEA also points to discrepancies the model leaves unexplained.
+
+# Summary of important lessons
+
+- Check the measurement model and factor orientation before interpreting latent paths.
+- Count moments and free parameters before using fit indices. A saturated model can reproduce the data by construction.
+- Read chi-square, CFI, TLI, RMSEA, and residuals together. Look for local misfit and use theory to assess proposed changes.
+- Multiply the coefficients along an indirect path and report it alongside the direct association. Equivalent global fit cannot establish temporal direction.
+
+# References
+
+UCLA Statistical Methods and Data Analytics. n.d. “Introduction to Structural Equation Modeling (SEM) in R with lavaan.” Accessed November 22, 2026. <https://stats.oarc.ucla.edu/r/seminars/rsem/>.
+
+# Appendix: Publication Links
+
+- [GitHub Repository](https://github.com/gmonjarrez/m13-sem-study-note)
+- [GitHub Pages Website](https://gmonjarrez.github.io/m13-sem-study-note/M13-SEM-Study-Note.html)

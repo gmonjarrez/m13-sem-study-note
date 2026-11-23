@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Georgiamerica Monjarrez" />
+  <meta name="dcterms.date" content="2026-11-22" />
+  <title>Structural Equation Modeling in R: Study Note</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+  html{scroll-behavior:smooth}body{max-width:58rem;margin:2.5rem auto;padding:0 1.3rem;color:#172727;font:16px/1.65 system-ui,sans-serif}h1,h2,h3{line-height:1.22;color:#153b3b}header{border-bottom:2px solid #16635c;margin-bottom:1.5rem}a{color:#14635c}table{display:block;overflow:auto;width:max-content;max-width:100%;font-size:.93rem}pre{border-radius:.35rem;background:#f1f5f5;padding:1rem;overflow:auto}figure{margin:1.5rem 0}figure svg{width:100%;max-width:680px}figcaption{font-size:.9rem;color:#405555}nav li{line-height:1.45}
+  </style>
+  <style>
+  body{max-width:1320px;margin:2rem auto;padding:0 clamp(1.25rem,5vw,5rem);display:grid;grid-template-columns:minmax(0,1fr) 215px;column-gap:3.7rem;text-align:left}body>*{grid-column:1}header{border:0;margin-bottom:1.6rem;display:grid;grid-template-columns:1fr 1fr}header h1{grid-column:1/-1;font-size:2.3rem;margin:0 0 1rem}header p{margin:0}header .author:before,header .date:before{display:block;font-size:.75rem;color:#495052}header .author:before{content:"AUTHOR"}header .date:before{content:"PUBLISHED"}nav#TOC{grid-column:2;grid-row:1/span 100;align-self:start;position:sticky;top:1.5rem;font-size:.9rem}nav ul{list-style:none;padding:0 0 0 .75rem;border-left:1px solid #ddd}nav a{text-decoration:none;color:#24292f}nav a:hover{color:#1b56b4;text-decoration:underline}th,td,figcaption{text-align:left!important}h1,h2,h3{color:#22272a}body>h1{margin-top:1.5em}@media(max-width:850px){body{display:block}nav#TOC{position:static}}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Structural Equation Modeling in R: Study Note</h1>
+<p class="author">Georgiamerica Monjarrez</p>
+<p class="date">November 22, 2026</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<h2 id="toc-title">Table of contents</h2>
+<ul>
+<li><a href="#introduction" id="toc-introduction"><span
+class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="#data-and-software" id="toc-data-and-software"><span
+class="toc-section-number">2</span> Data and software</a></li>
+<li><a href="#sem-concepts-and-lavaan-syntax"
+id="toc-sem-concepts-and-lavaan-syntax"><span
+class="toc-section-number">3</span> SEM concepts and lavaan
+syntax</a></li>
+<li><a href="#regression-and-path-analysis"
+id="toc-regression-and-path-analysis"><span
+class="toc-section-number">4</span> Regression and path
+analysis</a></li>
+<li><a href="#model-fit-and-identification"
+id="toc-model-fit-and-identification"><span
+class="toc-section-number">5</span> Model fit and
+identification</a></li>
+<li><a href="#modification-indices" id="toc-modification-indices"><span
+class="toc-section-number">6</span> Modification indices</a></li>
+<li><a href="#measurement-model" id="toc-measurement-model"><span
+class="toc-section-number">7</span> Measurement model</a></li>
+<li><a href="#structural-regression-models"
+id="toc-structural-regression-models"><span
+class="toc-section-number">8</span> Structural regression
+models</a></li>
+<li><a href="#practice-questions-and-answers"
+id="toc-practice-questions-and-answers"><span
+class="toc-section-number">9</span> Practice questions and
+answers</a></li>
+<li><a href="#summary-of-important-lessons"
+id="toc-summary-of-important-lessons"><span
+class="toc-section-number">10</span> Summary of important
+lessons</a></li>
+<li><a href="#references" id="toc-references"><span
+class="toc-section-number">11</span> References</a></li>
+<li><a href="#appendix-publication-links"
+id="toc-appendix-publication-links"><span
+class="toc-section-number">12</span> Appendix: Publication
+Links</a></li>
+</ul>
+</nav>
+<h1 data-number="1" id="introduction"><span
+class="header-section-number">1</span> Introduction</h1>
+<p>Structural equation modeling (SEM) connects regression and factor
+analysis. In UCLA’s fifth-grade example, Adjustment and Risk predict
+Achievement, with each factor measured by three observed scores. The
+tables use UCLA’s published results. The R code uses the original
+dataset.</p>
+<h1 data-number="2" id="data-and-software"><span
+class="header-section-number">2</span> Data and software</h1>
+<p>Install <code>lavaan</code> once in R with
+<code>install.packages("lavaan")</code>. The import reads UCLA’s 500
+cases. The matrix commands summarize how the nine scores vary
+together.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lavaan)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>data_url <span class="ot">&lt;-</span> <span class="st">&quot;https://stats.oarc.ucla.edu/wp-content/uploads/2021/02/worland5.csv&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(data_url)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(dat)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dat)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(dat))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">cov</span>(dat)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(S, <span class="dv">2</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cor</span>(dat), <span class="dv">3</span>)</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Observed indicators</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adjustment</td>
+<td><code>motiv</code> (motivation), <code>harm</code> (harmony),
+<code>stabi</code> (stability)</td>
+</tr>
+<tr>
+<td>Risk</td>
+<td><code>ppsych</code> (negative parental psychology), <code>ses</code>
+(socioeconomic status), <code>verbal</code> (verbal IQ)</td>
+</tr>
+<tr>
+<td>Achievement</td>
+<td><code>read</code> (reading), <code>arith</code> (arithmetic),
+<code>spell</code> (spelling)</td>
+</tr>
+</tbody>
+</table>
+<p>UCLA reports the following sample covariances. All nine sample
+variances are 100, so dividing each covariance by 100 gives its
+corresponding correlation. Reading and spelling are strongly related
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mn>.87</mn></mrow><annotation encoding="application/x-tex">r=.87</annotation></semantics></math>).
+Negative parental psychology is negatively related to reading
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mi>−</mi><mn>.39</mn></mrow><annotation encoding="application/x-tex">r=-.39</annotation></semantics></math>)
+and motivation
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mi>−</mi><mn>.25</mn></mrow><annotation encoding="application/x-tex">r=-.25</annotation></semantics></math>).</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">motiv</th>
+<th style="text-align: right;">harm</th>
+<th style="text-align: right;">stabi</th>
+<th style="text-align: right;">ppsych</th>
+<th style="text-align: right;">ses</th>
+<th style="text-align: right;">verbal</th>
+<th style="text-align: right;">read</th>
+<th style="text-align: right;">arith</th>
+<th style="text-align: right;">spell</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>motiv</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>harm</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>stabi</td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>ppsych</td>
+<td style="text-align: right;">−25</td>
+<td style="text-align: right;">−25</td>
+<td style="text-align: right;">−40</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>ses</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">−42</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>verbal</td>
+<td style="text-align: right;">59</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">−16</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>read</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">56</td>
+<td style="text-align: right;">−39</td>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>arith</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">−24</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">73</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>spell</td>
+<td style="text-align: right;">59</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">−31</td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">87</td>
+<td style="text-align: right;">72</td>
+<td style="text-align: right;">100</td>
+</tr>
+</tbody>
+</table>
+<p>The population covariance matrix
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>
+contains the unknown covariances in the population. The sample matrix
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
+estimates them using the 500 rows, with divisor
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n-1</annotation></semantics></math>
+in <code>cov()</code>. The matrix
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Σ</mi><mo stretchy="false" form="prefix">(</mo><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\Sigma(\hat\theta)</annotation></semantics></math>
+contains the covariances predicted by the fitted model. Their
+discrepancy reveals which observed relationships the model struggles to
+reproduce. Normal-theory ML in lavaan scales sample covariances using
+divisor
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
+by default.</p>
+<h1 data-number="3" id="sem-concepts-and-lavaan-syntax"><span
+class="header-section-number">3</span> SEM concepts and lavaan
+syntax</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning in this example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Observed variable</td>
+<td>A measured column such as <code>motiv</code>.</td>
+</tr>
+<tr>
+<td>Latent variable or factor</td>
+<td>An unobserved construct inferred from shared variation, such as
+Adjustment.</td>
+</tr>
+<tr>
+<td>Indicator</td>
+<td>A measured variable assigned to a factor, such as spelling for
+Achievement.</td>
+</tr>
+<tr>
+<td>Exogenous variable</td>
+<td>A source variable with no incoming regression path in the specified
+model, such as Risk in Model 6B.</td>
+</tr>
+<tr>
+<td>Endogenous variable</td>
+<td>A variable predicted within the model, such as Achievement in Model
+6B.</td>
+</tr>
+<tr>
+<td>Factor loading</td>
+<td>The expected change in an indicator per unit of its factor.</td>
+</tr>
+<tr>
+<td>Regression path</td>
+<td>The expected change in an outcome per unit of a predictor, holding
+the other predictors in that equation constant.</td>
+</tr>
+<tr>
+<td>Measurement model</td>
+<td>The factor-to-indicator equations, with indicator residuals.</td>
+</tr>
+<tr>
+<td>Structural model</td>
+<td>The regression equations linking predictors to outcomes, such as
+Adjustment and Risk predicting Achievement.</td>
+</tr>
+<tr>
+<td>Residual</td>
+<td>The part of an outcome or indicator left unexplained by its
+equation.</td>
+</tr>
+<tr>
+<td>Intercept</td>
+<td>The expected outcome when its predictors equal zero.</td>
+</tr>
+<tr>
+<td>Covariance</td>
+<td>A measure of how two variables vary together in their original
+units.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Meaning and diagram convention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>read ~ motiv</code></td>
+<td>A single-headed regression arrow from motivation to reading.</td>
+</tr>
+<tr>
+<td><code>adjust =~ motiv + harm + stabi</code></td>
+<td>Single-headed loading arrows from the Adjustment ellipse to the
+observed indicator rectangles.</td>
+</tr>
+<tr>
+<td><code>motiv ~~ harm</code></td>
+<td>A double-headed covariance arrow. Repeating the same variable gives
+a variance loop. For endogenous variables, the term refers to
+residuals.</td>
+</tr>
+<tr>
+<td><code>read ~ 1</code></td>
+<td>An intercept, sometimes shown as an arrow from a constant. Without
+predictors it gives a mean.</td>
+</tr>
+<tr>
+<td><code>adjust =~ 1*motiv</code></td>
+<td>Fixes the loading on the measurement arrow to 1 to define the
+factor’s scale.</td>
+</tr>
+<tr>
+<td><code>adjust =~ NA*motiv</code></td>
+<td>Frees the marker loading. Supply another scaling constraint, such as
+a fixed factor variance in CFA.</td>
+</tr>
+<tr>
+<td><code>adjust =~ a*harm</code></td>
+<td>Labels the harmony loading <code>a</code>. Reusing an otherwise free
+label constrains parameters to equality.</td>
+</tr>
+</tbody>
+</table>
+<p>In matrix notation,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>ν</mi><mo>+</mo><mi mathvariant="normal">Λ</mi><mi>η</mi><mo>+</mo><mi>ϵ</mi></mrow><annotation encoding="application/x-tex">y=\nu+\Lambda\eta+\epsilon</annotation></semantics></math>
+gives the measurement equations. Each row of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Λ</mi><annotation encoding="application/x-tex">\Lambda</annotation></semantics></math>
+refers to an indicator and each column to a factor. The structural
+equation is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>η</mi><mo>=</mo><mi>α</mi><mo>+</mo><mi>B</mi><mi>η</mi><mo>+</mo><mi mathvariant="normal">Γ</mi><mi>ξ</mi><mo>+</mo><mi>ζ</mi></mrow><annotation encoding="application/x-tex">\eta=\alpha+B\eta+\Gamma\xi+\zeta</annotation></semantics></math>,
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>η</mi><annotation encoding="application/x-tex">\eta</annotation></semantics></math>
+contains endogenous factors,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ξ</mi><annotation encoding="application/x-tex">\xi</annotation></semantics></math>
+contains exogenous factors, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ζ</mi><annotation encoding="application/x-tex">\zeta</annotation></semantics></math>
+contains disturbances. In each path matrix the row is the destination
+and the column is the source.</p>
+<h1 data-number="4" id="regression-and-path-analysis"><span
+class="header-section-number">4</span> Regression and path analysis</h1>
+<h2 data-number="4.1" id="simple-regression"><span
+class="header-section-number">4.1</span> Simple regression</h2>
+<p>The models estimate reading from motivation. In UCLA’s results, both
+give a slope of 0.530 and an intercept close to zero because the scores
+are centered. A one-point increase in motivation corresponds to 0.530
+more predicted reading points. The ML residual variance is 71.766 and
+the predictor variance is 99.800. Least squares minimizes the residual
+sum of squares and estimates residual variance using
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>−</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">n-2</annotation></semantics></math>
+here. Normal ML maximizes the likelihood and divides the residual sum of
+squares by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>.
+The five joint moments (two means, two variances, one covariance) match
+five free parameters, yielding zero model degrees of freedom. The 498
+residual degrees of freedom from <code>lm()</code> serve a different
+purpose.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fit_lm <span class="ot">&lt;-</span> <span class="fu">lm</span>(read <span class="sc">~</span> motiv, <span class="at">data =</span> dat)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_lm)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>fit_lavaan <span class="ot">&lt;-</span> <span class="fu">sem</span>(<span class="st">&#39;read ~ 1 + motiv</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">                   motiv ~~ motiv&#39;</span>, <span class="at">data =</span> dat)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_lavaan)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">OLS =</span> <span class="fu">sigma</span>(fit_lm)<span class="sc">^</span><span class="dv">2</span>, <span class="at">ML =</span> <span class="fu">mean</span>(<span class="fu">residuals</span>(fit_lm)<span class="sc">^</span><span class="dv">2</span>))</span></code></pre></div>
+<h2 data-number="4.2" id="multiple-and-multivariate-regression"><span
+class="header-section-number">4.2</span> Multiple and multivariate
+regression</h2>
+<p>Model 2 has one outcome and two predictors. Models 3A, 3D and 3E
+jointly model reading and arithmetic. Every model below is an
+observed-variable regression, and each outcome has its own residual
+variance. In Model 2, the predictor covariance is estimated explicitly.
+In 3A, 3D and 3E, the observed exogenous moments are treated as fixed at
+their sample values.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">M2 =</span> <span class="st">&#39;read ~ 1 + ppsych + motiv</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">        ppsych ~~ motiv&#39;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">M3A =</span> <span class="st">&#39;read ~ 1 + ppsych + motiv</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">         arith ~ 1 + motiv&#39;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">M3D =</span> <span class="st">&#39;read ~ 1 + ppsych + motiv</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">         arith ~ 1 + motiv</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">         read ~~ 0*arith&#39;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">M3E =</span> <span class="st">&#39;read ~ 1 + ppsych + motiv</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">         arith ~ 1 + ppsych + motiv&#39;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>regression_fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(models, sem, <span class="at">data =</span> dat)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (name <span class="cf">in</span> <span class="fu">names</span>(regression_fits)) {</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, name, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">summary</span>(regression_fits[[name]]))</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+</colgroup>
+<thead>
+<tr>
+<th>UCLA model</th>
+<th>Endogenous</th>
+<th>Exogenous</th>
+<th>Regression paths</th>
+<th>Covariance treatment</th>
+<th>Residual variances</th>
+<th style="text-align: right;">Free parameters</th>
+<th style="text-align: right;">df</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>Reading</td>
+<td>Motivation, parental psychology</td>
+<td>Both predictors → reading</td>
+<td>Predictor covariance free</td>
+<td>Reading</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>3A</td>
+<td>Reading, arithmetic</td>
+<td>Motivation, parental psychology</td>
+<td>Both → reading. Motivation → arithmetic.</td>
+<td>Outcome residual covariance free</td>
+<td>Reading, arithmetic</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>3D</td>
+<td>Reading, arithmetic</td>
+<td>Motivation, parental psychology</td>
+<td>Same as 3A</td>
+<td>Outcome residual covariance fixed to zero</td>
+<td>Reading, arithmetic</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>3E</td>
+<td>Reading, arithmetic</td>
+<td>Motivation, parental psychology</td>
+<td>Both predictors → both outcomes</td>
+<td>Outcome residual covariance free</td>
+<td>Reading, arithmetic</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p>In 3A, motivation predicts higher reading and arithmetic scores
+(0.476 and 0.600), and negative parental psychology predicts lower
+reading scores (−0.216). Fixing the residual covariance to zero in 3D
+shifts the reading slopes to 0.461 and −0.275 and raises chi-square from
+6.796 to 234.960. The two outcomes share considerable variation beyond
+their specified predictors. In 3E, adding parental psychology to
+arithmetic gives a slope of −0.096. With the same predictors in both
+equations, estimating or fixing the residual covariance yields the same
+slopes, though fit can differ.</p>
+<h2 data-number="4.3" id="observed-variable-path-analysis"><span
+class="header-section-number">4.3</span> Observed-variable path
+analysis</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reading is both an outcome and a predictor.</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>m4a <span class="ot">&lt;-</span> <span class="st">&#39;read ~ 1 + ppsych + motiv</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">        arith ~ 1 + motiv + read&#39;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>fit4a <span class="ot">&lt;-</span> <span class="fu">sem</span>(m4a, <span class="at">data =</span> dat)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit4a, <span class="at">standardized =</span> <span class="cn">TRUE</span>, <span class="at">rsquare =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<figure>
+<svg viewBox="0 0 680 212" role="img" aria-label="Model 4A. Single-headed arrows show regressions. The dashed double-headed arrow shows the sample covariance of the exogenous predictors.">
+<defs><marker id="arr4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#265c5a"/></marker></defs>
+<line x1="209.0" y1="72.75348837209302" x2="250.0" y2="81.90697674418604" stroke="#265c5a" stroke-width="2" marker-end="url(#arr4)" />
+<text x="232.5" y="69.0" text-anchor="middle" fill="#173638">−0.275</text>
+<line x1="209.0" y1="134.29302325581395" x2="250.0" y2="124.18604651162791" stroke="#265c5a" stroke-width="2" marker-end="url(#arr4)" />
+<text x="232.5" y="119.5" text-anchor="middle" fill="#173638">0.461</text>
+<line x1="209.0" y1="144.646511627907" x2="465.0" y2="113.09302325581396" stroke="#265c5a" stroke-width="2" marker-end="url(#arr4)" />
+<text x="340.0" y="119.5" text-anchor="middle" fill="#173638">0.296</text>
+<line x1="424.0" y1="102.0" x2="465.0" y2="102.0" stroke="#265c5a" stroke-width="2" marker-end="url(#arr4)" />
+<text x="447.5" y="93.0" text-anchor="middle" fill="#173638">0.573</text>
+<line x1="125.0" y1="76.0" x2="125.0" y2="127.0" stroke="#265c5a" stroke-width="2" marker-end="url(#arr4)" marker-start="url(#arr4)" stroke-dasharray="4 4"/>
+<rect x="41" y="32" width="168" height="44" rx="5" fill="#e7f2ef" stroke="#265c5a"/>
+<text x="125" y="59" text-anchor="middle">Parental psychology</text>
+<rect x="256" y="80" width="168" height="44" rx="5" fill="#e7f2ef" stroke="#265c5a"/>
+<text x="340" y="107" text-anchor="middle">Reading</text>
+<rect x="41" y="133" width="168" height="44" rx="5" fill="#e7f2ef" stroke="#265c5a"/>
+<text x="125" y="160" text-anchor="middle">Motivation</text>
+<rect x="471" y="80" width="168" height="44" rx="5" fill="#e7f2ef" stroke="#265c5a"/>
+<text x="555" y="107" text-anchor="middle">Arithmetic</text>
+</svg>
+<figcaption>
+Model 4A. Single-headed arrows show regressions. The dashed
+double-headed arrow shows the sample covariance of the exogenous
+predictors.
+</figcaption>
+</figure>
+<p>In Model 4A, negative parental psychology predicts lower reading
+scores after adjusting for motivation. Motivation predicts higher
+reading scores after adjusting for parental psychology. Motivation and
+reading each predict higher arithmetic scores holding the other fixed.
+Reading carries an indirect association from parental psychology to
+arithmetic of approximately
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mn>0.275</mn><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><mn>0.573</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>−</mi><mn>0.158</mn></mrow><annotation encoding="application/x-tex">(-0.275)(0.573)=-0.158</annotation></semantics></math>.
+Motivation has an indirect association of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.461</mn><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><mn>0.573</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.264</mn></mrow><annotation encoding="application/x-tex">(0.461)(0.573)=0.264</annotation></semantics></math>
+in addition to its direct path of 0.296.</p>
+<h1 data-number="5" id="model-fit-and-identification"><span
+class="header-section-number">5</span> Model fit and identification</h1>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fit_fields <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;npar&quot;</span>, <span class="st">&quot;chisq&quot;</span>, <span class="st">&quot;df&quot;</span>, <span class="st">&quot;pvalue&quot;</span>, <span class="st">&quot;baseline.chisq&quot;</span>,</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;baseline.df&quot;</span>, <span class="st">&quot;cfi&quot;</span>, <span class="st">&quot;tli&quot;</span>, <span class="st">&quot;rmsea&quot;</span>, <span class="st">&quot;srmr&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">fitMeasures</span>(fit4a, fit_fields), <span class="dv">3</span>)</span></code></pre></div>
+<p>Model 4A gives
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>χ</mi><mn>2</mn></msup><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>4.870</mn></mrow><annotation encoding="application/x-tex">\chi^2(1)=4.870</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>.027</mn></mrow><annotation encoding="application/x-tex">p=.027</annotation></semantics></math>.
+The exact-fit test detects a discrepancy. The baseline model has
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>χ</mi><mn>2</mn></msup><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>674.748</mn></mrow><annotation encoding="application/x-tex">\chi^2(5)=674.748</annotation></semantics></math>.
+It provides a reference with no predictor-to-outcome associations or
+outcome residual covariance under this model’s fixed-predictor setup.
+CFI (0.994) and TLI (0.971) show substantial improvement over the
+baseline, with TLI accounting for complexity through chi-square per
+degree of freedom. RMSEA (0.088, 90% CI 0.024–0.172) estimates
+approximate discrepancy per degree of freedom. The wide interval
+reflects uncertainty in a one-df model. SRMR is 0.015, so the average
+standardized residual is small. The overall pattern suggests that 4A
+reproduces much of the covariance structure while leaving a detectable
+discrepancy.</p>
+<p>A saturated model reproduces all sample moments freely and has zero
+degrees of freedom. A just-identified model has a unique solution and
+zero degrees of freedom. An over-identified model has a unique solution
+and positive degrees of freedom, leaving restrictions to test. An
+under-identified model lacks enough independent information for unique
+estimates. Negative degrees of freedom guarantee under-identification,
+and a nonnegative count alone cannot establish identification. A free
+parameter is estimated from the data, and a fixed parameter is set in
+advance.</p>
+<h1 data-number="6" id="modification-indices"><span
+class="header-section-number">6</span> Modification indices</h1>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">modindices</span>(fit4a, <span class="at">sort =</span> <span class="cn">TRUE</span>), <span class="dv">10</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>m4b <span class="ot">&lt;-</span> <span class="st">&#39;read ~ 1 + ppsych + motiv</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="st">        arith ~ 1 + motiv + read + ppsych&#39;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>fit4b <span class="ot">&lt;-</span> <span class="fu">sem</span>(m4b, <span class="at">data =</span> dat)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">fitMeasures</span>(fit4b, fit_fields), <span class="dv">3</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="fu">lavTestLRT</span>(fit4a, fit4b)</span></code></pre></div>
+<p>A modification index approximates the reduction in chi-square from
+freeing one fixed parameter, a one-df change. The expected parameter
+change (EPC) estimates the resulting coefficient on its original scale.
+In UCLA’s example, <code>arith ~ ppsych</code> has MI 4.847 and EPC
+0.068. The refit gives a slope of 0.068 and chi-square falls by 4.870.
+Model 4B is saturated. A direct link is plausible if home stress relates
+to arithmetic through channels beyond reading. The estimated conditional
+association is positive and small, so its direction merits scrutiny. A
+larger index for reversing a predictor/outcome role would require a
+different substantive explanation. Searching many candidate paths can
+find sample-specific patterns that fail to replicate. Use the indices to
+diagnose misfit and justify any exploratory changes using theory.</p>
+<h1 data-number="7" id="measurement-model"><span
+class="header-section-number">7</span> Measurement model</h1>
+<p>The CFA fixes one loading per factor to 1. Verbal IQ sets the
+direction of the Risk factor, so higher factor scores indicate a more
+favorable profile.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>measurement_model <span class="ot">&lt;-</span> <span class="st">&#39;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="st">  adjust =~ motiv + harm + stabi</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="st">  risk =~ verbal + ppsych + ses</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="st">  achieve =~ read + arith + spell</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>fit_measurement <span class="ot">&lt;-</span> <span class="fu">cfa</span>(measurement_model, <span class="at">data =</span> dat)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_measurement, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>, <span class="at">standardized =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 28%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Indicator</th>
+<th style="text-align: right;">Standardized loading</th>
+<th style="text-align: right;">Standardized residual variance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adjustment</td>
+<td>Motivation</td>
+<td style="text-align: right;">0.933</td>
+<td style="text-align: right;">0.129</td>
+</tr>
+<tr>
+<td>Adjustment</td>
+<td>Harmony</td>
+<td style="text-align: right;">0.825</td>
+<td style="text-align: right;">0.319</td>
+</tr>
+<tr>
+<td>Adjustment</td>
+<td>Stability</td>
+<td style="text-align: right;">0.648</td>
+<td style="text-align: right;">0.580</td>
+</tr>
+<tr>
+<td>Risk</td>
+<td>Verbal IQ</td>
+<td style="text-align: right;">0.733</td>
+<td style="text-align: right;">0.463</td>
+</tr>
+<tr>
+<td>Risk</td>
+<td>Negative parental psychology</td>
+<td style="text-align: right;">−0.564</td>
+<td style="text-align: right;">0.682</td>
+</tr>
+<tr>
+<td>Risk</td>
+<td>Socioeconomic status</td>
+<td style="text-align: right;">0.591</td>
+<td style="text-align: right;">0.650</td>
+</tr>
+<tr>
+<td>Achievement</td>
+<td>Reading</td>
+<td style="text-align: right;">0.941</td>
+<td style="text-align: right;">0.114</td>
+</tr>
+<tr>
+<td>Achievement</td>
+<td>Arithmetic</td>
+<td style="text-align: right;">0.788</td>
+<td style="text-align: right;">0.379</td>
+</tr>
+<tr>
+<td>Achievement</td>
+<td>Spelling</td>
+<td style="text-align: right;">0.919</td>
+<td style="text-align: right;">0.156</td>
+</tr>
+</tbody>
+</table>
+<p>These published Model 6A values also apply to the
+covariance-equivalent CFA. Each loading is the expected indicator change
+in standard deviations for a one-standard-deviation increase in its
+factor. Motivation is the strongest Adjustment indicator. Higher verbal
+IQ and socioeconomic status accompany lower negative parental psychology
+on the Risk dimension. Reading and spelling have especially strong
+Achievement loadings. Residual variance is the share of indicator
+variance the factor leaves unexplained. For example, the Achievement
+factor accounts for about 89% of the variance in reading and 62% in
+arithmetic.</p>
+<p>The CFA and Model 6A both allow all three factor covariances through
+different parameterizations. Their common fit is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>χ</mi><mn>2</mn></msup><mo stretchy="false" form="prefix">(</mo><mn>24</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>148.982</mn></mrow><annotation encoding="application/x-tex">\chi^2(24)=148.982</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>&lt;</mo><mn>.001</mn></mrow><annotation encoding="application/x-tex">p&lt;.001</annotation></semantics></math>,
+CFI = .951, TLI = .927, RMSEA = .102, and SRMR = .041. The model
+improves substantially on independence and has small average
+standardized residuals, but the RMSEA and chi-square indicate meaningful
+misfit. The three factors have interpretable indicators, and the fit
+evidence calls for caution.</p>
+<h1 data-number="8" id="structural-regression-models"><span
+class="header-section-number">8</span> Structural regression models</h1>
+<h2 data-number="8.1" id="one-endogenous-factor"><span
+class="header-section-number">8.1</span> One endogenous factor</h2>
+<p>Adjustment and Risk are correlated predictors of Achievement.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>structural_model <span class="ot">&lt;-</span> <span class="fu">paste</span>(measurement_model, <span class="st">&quot;achieve ~ adjust + risk&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fit_structural <span class="ot">&lt;-</span> <span class="fu">sem</span>(structural_model, <span class="at">data =</span> dat)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_structural, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>, <span class="at">standardized =</span> <span class="cn">TRUE</span>, <span class="at">rsquare =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p>A one-SD increase in Adjustment predicts 0.372 SD higher Achievement
+at the same Risk score. A one-SD increase along the verbal-IQ-oriented
+Risk factor predicts 0.564 SD higher Achievement at the same Adjustment
+score. Both paths have
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>&lt;</mo><mn>.001</mn></mrow><annotation encoding="application/x-tex">p&lt;.001</annotation></semantics></math>.
+Because the Risk factor is oriented toward higher verbal IQ and
+socioeconomic status and lower negative parental psychology, the
+positive coefficient describes a more favorable profile. Using parental
+psychology as the marker reverses the Risk factor’s orientation and the
+sign of its structural path. The factor loadings retain the pattern
+shown in the CFA table. Adjustment and Risk have covariance 32.098 and
+correlation .470. Achievement’s residual variance is 30.685 in
+marker-scale units, or .347 in standardized units, so the predictors
+account for about 65.3% of latent Achievement variance. Global fit
+equals the CFA’s mixed fit.</p>
+<h2 data-number="8.2" id="two-endogenous-factors"><span
+class="header-section-number">8.2</span> Two endogenous factors</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Label paths to estimate the product and its delta-method interval.</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>two_endogenous <span class="ot">&lt;-</span> <span class="fu">paste</span>(measurement_model, <span class="st">&#39;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="st">  adjust ~ a*risk</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="st">  achieve ~ b*adjust + direct*risk</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="st">  indirect := a*b</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="st">  total := direct + indirect</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>fit_two <span class="ot">&lt;-</span> <span class="fu">sem</span>(two_endogenous, <span class="at">data =</span> dat)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_two, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>, <span class="at">standardized =</span> <span class="cn">TRUE</span>, <span class="at">rsquare =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>effects <span class="ot">&lt;-</span> <span class="fu">parameterEstimates</span>(fit_two, <span class="at">standardized =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>effects[effects<span class="sc">$</span>op <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;~&quot;</span>, <span class="st">&quot;:=&quot;</span>), ]</span></code></pre></div>
+<figure>
+<svg viewBox="0 0 680 212" role="img" aria-label="Model 6B structural paths. Ellipses denote latent variables. Labels are standardized coefficients.">
+<defs><marker id="arr3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#265c5a"/></marker></defs>
+<line x1="177.22222222222223" y1="98.0" x2="244.44444444444446" y2="76.0" stroke="#265c5a" stroke-width="2" marker-end="url(#arr3)" />
+<text x="220.0" y="75.0" text-anchor="middle" fill="#173638">0.470</text>
+<line x1="194.0" y1="120.0" x2="460.0" y2="120.0" stroke="#265c5a" stroke-width="2" marker-end="url(#arr3)" />
+<text x="330.0" y="111.0" text-anchor="middle" fill="#173638">0.564</text>
+<line x1="397.22222222222223" y1="70.0" x2="464.44444444444446" y2="92.0" stroke="#265c5a" stroke-width="2" marker-end="url(#arr3)" />
+<text x="440.0" y="75.0" text-anchor="middle" fill="#173638">0.372</text>
+<ellipse cx="110" cy="120" rx="84" ry="22" fill="#e7f2ef" stroke="#265c5a"/>
+<text x="110" y="125" text-anchor="middle">Risk</text>
+<ellipse cx="330" cy="48" rx="84" ry="22" fill="#e7f2ef" stroke="#265c5a"/>
+<text x="330" y="53" text-anchor="middle">Adjustment</text>
+<ellipse cx="550" cy="120" rx="84" ry="22" fill="#e7f2ef" stroke="#265c5a"/>
+<text x="550" y="125" text-anchor="middle">Achievement</text>
+</svg>
+<figcaption>
+Model 6B structural paths. Ellipses denote latent variables. Labels are
+standardized coefficients.
+</figcaption>
+</figure>
+<p>For
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>η</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">Adjustment</mtext><mo>,</mo><mtext mathvariant="normal">Achievement</mtext><msup><mo stretchy="false" form="postfix">)</mo><mi>𝖳</mi></msup></mrow><annotation encoding="application/x-tex">\eta=(\text{Adjustment},\text{Achievement})^\mathsf{T}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi><mo>=</mo><mtext mathvariant="normal">Risk</mtext></mrow><annotation encoding="application/x-tex">\xi=\text{Risk}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Γ</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>,</mo><msup><mi>c</mi><mo>′</mo></msup><msup><mo stretchy="false" form="postfix">)</mo><mi>𝖳</mi></msup></mrow><annotation encoding="application/x-tex">\Gamma=(a,c&#39;)^\mathsf{T}</annotation></semantics></math>
+contains Risk’s two outgoing paths, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mn>21</mn></msub><mo>=</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">B_{21}=b</annotation></semantics></math>
+contains the Adjustment-to-Achievement path. All other entries of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+are zero. The unstandardized indirect association is approximately
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.599</mn><mo stretchy="false" form="prefix">(</mo><mn>0.375</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.225</mn></mrow><annotation encoding="application/x-tex">0.599(0.375)=0.225</annotation></semantics></math>.
+The standardized indirect association is about
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.470</mn><mo stretchy="false" form="prefix">(</mo><mn>0.372</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.175</mn></mrow><annotation encoding="application/x-tex">0.470(0.372)=0.175</annotation></semantics></math>,
+giving a standardized total association of about 0.739 when added to the
+direct path of 0.564. The identical fit of Models 6A and 6B reflects the
+same implied covariance structure. Direction and mediation require
+substantive support beyond the fit statistics.</p>
+<h1 data-number="9" id="practice-questions-and-answers"><span
+class="header-section-number">9</span> Practice questions and
+answers</h1>
+<ol type="1">
+<li><p><strong>What is structural equation modeling?</strong><br />
+SEM estimates a system of regression and measurement equations and
+checks how well their implied moments reproduce the observed
+data.</p></li>
+<li><p><strong>Which statistical models can be treated as special cases
+of SEM?</strong><br />
+Simple, multiple and multivariate regression, observed-variable path
+analysis, CFA, and latent structural regression all fit within
+SEM.</p></li>
+<li><p><strong>What is the difference between an observed variable and a
+latent variable?</strong><br />
+Reading is measured directly as a dataset column. Achievement is
+inferred from the shared variation of reading, arithmetic and
+spelling.</p></li>
+<li><p><strong>What is the difference between an exogenous variable and
+an endogenous variable?</strong><br />
+An exogenous variable has no incoming regression arrow. An endogenous
+variable has at least one, as Adjustment and Achievement do in Model
+6B.</p></li>
+<li><p><strong>What is the difference between a measurement model and a
+structural model?</strong><br />
+The measurement model links factors to indicators. The structural model
+specifies predictive relationships among variables, such as Risk
+predicting Achievement.</p></li>
+<li><p><strong>What does the <code>~</code> operator mean in
+<code>lavaan</code>?</strong><br />
+It regresses the variable on the left on predictors on the right, as in
+<code>read ~ motiv</code>.</p></li>
+<li><p><strong>What does the <code>=~</code> operator
+mean?</strong><br />
+It defines a latent factor and its observed indicators, as in
+<code>achieve =~ read + arith + spell</code>.</p></li>
+<li><p><strong>What does the <code>~~</code> operator
+mean?</strong><br />
+It specifies a covariance for different variables and a variance for a
+repeated variable. For fitted outcomes this can be a residual covariance
+or residual variance.</p></li>
+<li><p><strong>What is the difference between a regression path and a
+factor loading?</strong><br />
+A regression path expresses a conditional predictive relationship. A
+factor loading expresses how a measured indicator changes with the
+factor it represents.</p></li>
+<li><p><strong>What is the difference between a sample covariance matrix
+and a model-implied covariance matrix?</strong><br />
+The sample matrix
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
+comes from the observations. The implied matrix
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Σ</mi><mo stretchy="false" form="prefix">(</mo><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\Sigma(\hat\theta)</annotation></semantics></math>
+comes from the fitted parameters and model restrictions.</p></li>
+<li><p><strong>Why does the <code>cov()</code> function produce a sample
+covariance matrix rather than a population covariance
+matrix?</strong><br />
+It uses the supplied sample and its sample means, dividing the sum of
+cross-products by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n-1</annotation></semantics></math>
+to estimate population covariance.</p></li>
+<li><p><strong>What is the difference between multiple regression and
+multivariate regression?</strong><br />
+Multiple regression uses several predictors for one outcome.
+Multivariate regression models two or more outcomes jointly and can
+estimate their residual covariance.</p></li>
+<li><p><strong>Why are some models saturated?</strong><br />
+They have enough independently estimable parameters to reproduce every
+modeled sample moment, as Model 3E does when both predictors enter both
+equations and the residual covariance is free.</p></li>
+<li><p><strong>What does it mean when a model has zero degrees of
+freedom?</strong><br />
+The moment count equals the free parameter count. If identified, the
+model can reproduce the sample moments and has no remaining restrictions
+for an overall fit test.</p></li>
+<li><p><strong>What does it mean when a model has negative degrees of
+freedom?</strong><br />
+There are more free parameters than available moments, so the data
+cannot uniquely identify all parameters.</p></li>
+<li><p><strong>What is the difference between the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Γ</mi><annotation encoding="application/x-tex">\Gamma</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+matrices?</strong><br />
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Γ</mi><annotation encoding="application/x-tex">\Gamma</annotation></semantics></math>
+contains exogenous-to-endogenous paths, such as Risk to Adjustment.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+contains paths between endogenous variables, such as Adjustment to
+Achievement.</p></li>
+<li><p><strong>What is a modification index?</strong><br />
+It is a one-df score statistic that approximates the chi-square
+improvement from freeing one fixed parameter.</p></li>
+<li><p><strong>Why should researchers not automatically follow
+modification-index recommendations?</strong><br />
+Repeated data-driven searches can capitalize on chance and introduce
+implausible directions or cross-loadings. Theory and independent
+validation support defensible revisions.</p></li>
+<li><p><strong>What is the difference between a direct effect and an
+indirect effect?</strong><br />
+The direct effect follows a single arrow, such as Risk to Achievement.
+The indirect effect follows multiple arrows, such as Risk to Adjustment
+to Achievement, and equals the product of their coefficients.</p></li>
+<li><p><strong>Which paths in the structural model are theoretically
+most important?</strong><br />
+Adjustment → Achievement and Risk → Achievement address the academic
+outcome directly. Risk → Adjustment provides the proposed mechanism for
+the indirect relationship.</p></li>
+<li><p><strong>How should the fit of the measurement model be
+evaluated?</strong><br />
+Combine overall fit indices and residuals with the signs and sizes of
+loadings, indicator residual variances and factor correlations.</p></li>
+<li><p><strong>How should the fit of the structural model be
+evaluated?</strong><br />
+Consider overall fit alongside path signs, effect sizes, uncertainty,
+and explained variance. Compare models with the same indicators and
+recognize that distinct structures can fit equally well.</p></li>
+<li><p><strong>What conclusions can be drawn from the standardized
+estimates?</strong><br />
+The verbal-IQ-oriented Risk association with Achievement (.564) is
+larger than the Adjustment association (.372) on a common SD scale.
+Reading (.941) is a stronger indicator of Achievement than arithmetic
+(.788).</p></li>
+<li><p><strong>What limitations should be considered when interpreting
+this SEM?</strong><br />
+The estimates depend on the proposed indicators and path directions,
+normal-theory ML assumptions and the sample. Omitted variables,
+measurement weaknesses, and observational data limit causal
+interpretation and generalization. The elevated RMSEA also points to
+discrepancies the model leaves unexplained.</p></li>
+</ol>
+<h1 data-number="10" id="summary-of-important-lessons"><span
+class="header-section-number">10</span> Summary of important
+lessons</h1>
+<ul>
+<li>Check the measurement model and factor orientation before
+interpreting latent paths.</li>
+<li>Count moments and free parameters before using fit indices. A
+saturated model can reproduce the data by construction.</li>
+<li>Read chi-square, CFI, TLI, RMSEA, and residuals together. Look for
+local misfit and use theory to assess proposed changes.</li>
+<li>Multiply the coefficients along an indirect path and report it
+alongside the direct association. Equivalent global fit cannot establish
+temporal direction.</li>
+</ul>
+<h1 data-number="11" id="references"><span
+class="header-section-number">11</span> References</h1>
+<p>UCLA Statistical Methods and Data Analytics. n.d. “Introduction to
+Structural Equation Modeling (SEM) in R with lavaan.” Accessed November
+22, 2026. <a href="https://stats.oarc.ucla.edu/r/seminars/rsem/"
+class="uri">https://stats.oarc.ucla.edu/r/seminars/rsem/</a>.</p>
+<h1 data-number="12" id="appendix-publication-links"><span
+class="header-section-number">12</span> Appendix: Publication Links</h1>
+<ul>
+<li><a href="https://github.com/gmonjarrez/m13-sem-study-note">GitHub
+Repository</a></li>
+<li><a
+href="https://gmonjarrez.github.io/m13-sem-study-note/M13-SEM-Study-Note.html">GitHub
+Pages Website</a></li>
+</ul>
+</body>
+</html>
