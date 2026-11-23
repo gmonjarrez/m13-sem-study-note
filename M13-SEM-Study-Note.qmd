@@ -1,6 +1,6 @@
 ---
 title: "Structural Equation Modeling in R: Study Note"
-author: "Georgiamerica Monjarrez"
+author: "Georgia Monjarrez"
 date: November 22, 2026
 format:
   html:
